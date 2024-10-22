@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  chord-part1:
+    build: .
+    image: chord-part1
+    working_dir: /workspace
+    volumes:
+      -  ./:/workspace
+    command: tail -f /dev/null
