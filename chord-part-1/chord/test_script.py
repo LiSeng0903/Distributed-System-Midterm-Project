@@ -42,16 +42,14 @@ if __name__ == "__main__":
 
 	print("=====================================================")
 	time.sleep(20)
-	print(ids)
-	print("5057 finger table")
-	clients[0].call("printFingerTable")
-	print("5062 finger table")
-	clients[5].call("printFingerTable")
-	# exit()
+	total_hops = 0
 	for i in range(5):
 		key = random.getrandbits(32)
 		target = find_successor(key, ids)
 		for j in range(n):
+			hop = clients[j].call("count_hop", key)
+			total_hops += hop
+			print(f"Node: {base+j}, Key: {key}, Target: {target}, Hop: {hop}")
 			try:
 				assert clients[j].call("find_successor", key)[2] == target
 			except:
@@ -61,8 +59,8 @@ if __name__ == "__main__":
 				print("Client answer ", clients[j].call("find_successor", key))
 				clients[j].call("printFingerTable")
 				exit()
-			# print(base + j, clients[j].call("find_successor", key))
 			time.sleep(2)
+	print("Average hops: ", total_hops / (5*n))
 	print("All lookup tests passed!")
 	print("=====================================================")
     

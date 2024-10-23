@@ -44,6 +44,21 @@ Node closest_preceding_node(uint64_t id) {
   return successor;
 }
 
+int count_hop(uint64_t id) {
+  if  (successor.ip == "") {
+    return 0;
+  }
+  if (self.id == successor.id) {
+    return 1;
+  }
+  if (is_between(id, self.id, successor.id) || id == successor.id) {
+    return 1;
+  }
+  Node n = closest_preceding_node(id);
+  rpc::client client(n.ip, n.port);
+  return 1 + client.call("count_hop", id).as<int>();
+}
+
 void create() {
   predecessor.ip = "";
   successor = self;
@@ -119,6 +134,7 @@ void register_rpcs() {
   add_rpc("find_successor", &find_successor);
   add_rpc("notify", &notify);
   add_rpc("printFingerTable", &printFingerTable);
+  add_rpc("count_hop", &count_hop);
 }
 
 void register_periodics() {
