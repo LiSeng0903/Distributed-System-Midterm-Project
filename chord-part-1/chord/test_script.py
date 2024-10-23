@@ -23,6 +23,7 @@ if __name__ == "__main__":
 		clients[i].call("join", clients[i - 1].call("get_info"))
 		print(base + i, "joined")
 		time.sleep(2)
+	sys.exit()
     
 	for i in range(n):
 		print(base + i)

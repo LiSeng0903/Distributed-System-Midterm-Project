@@ -7,6 +7,12 @@
 
 Node self, successor, predecessor;
 
+int table_size = 4;
+
+Node* finger_table = new Node[table_size];
+
+int next = 0;
+
 Node get_info() { return self; } // Do not modify this line.
 
 Node get_predecessor() { return predecessor; }
@@ -20,6 +26,8 @@ bool is_between(uint64_t id, uint64_t a, uint64_t b) {
     return id > a || id < b;
   }
 }
+
+uint64_t mod2pow32(uint64_t num) { return num & 0xFFFFFFFF; }
 
 void create() {
   predecessor.ip = "";
@@ -36,7 +44,10 @@ void join(Node n) {
 
 Node find_successor(uint64_t id) {
   // TODO: implement your `find_successor` RPC
-   if (self.id == successor.id) {
+  if  (successor.ip == "") {
+    return self;
+  }
+  if (self.id == successor.id) {
     return self;
   }
   if (is_between(id, self.id, successor.id) || id == successor.id) {
@@ -75,6 +86,26 @@ void check_predecessor() {
   }
 }
 
+void fix_fingers() {
+  next = (next + 1) % table_size;
+  uint64_t gap = mod2pow32((1 << (next*(32/table_size) - 1)));
+  uint64_t id = mod2pow32(self.id + gap);
+  finger_table[next] = find_successor(id);
+  if (self.port == 5059){
+     std::cout << "index: " << id << std::endl;
+     std::cout << "Finger table " << " : " << finger_table[next].id << std::endl;
+    // for (int i = 0; i < table_size; i++) {
+    //  std::cout << "Finger table " << i << " : " << finger_table[i].id << std::endl;
+    //  std::cout << "index: " << id << std::endl;
+    // }
+  }
+  // if (self.port == 5061){
+  //   std::cout << "me: " << self.id << std::endl;
+  //   std::cout << "gap: " << gap << std::endl;
+  //   std::cout << "ID: " << id << std::endl;
+  // }
+}
+
 void register_rpcs() {
   add_rpc("get_info", &get_info); // Do not modify this line.
   add_rpc("get_predecessor", &get_predecessor);
@@ -88,6 +119,7 @@ void register_rpcs() {
 void register_periodics() {
   add_periodic(check_predecessor);
   add_periodic(stabilize);
+  add_periodic(fix_fingers);
 }
 
 #endif /* RPCS_H */
