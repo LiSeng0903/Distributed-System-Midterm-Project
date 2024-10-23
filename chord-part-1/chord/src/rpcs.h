@@ -13,12 +13,6 @@ Node* finger_table = new Node[table_size];
 
 int next = 0;
 
-Node get_info() { return self; } // Do not modify this line.
-
-Node get_predecessor() { return predecessor; }
-
-Node get_successor() { return successor; }
-
 bool is_between(uint64_t id, uint64_t a, uint64_t b) {
   if (a < b) {
     return id > a && id < b;
@@ -28,6 +22,27 @@ bool is_between(uint64_t id, uint64_t a, uint64_t b) {
 }
 
 uint64_t mod2pow32(uint64_t num) { return num & 0xFFFFFFFF; }
+
+void printFingerTable(){
+  for (int i = 0; i < table_size; i++) {
+    std::cout << "Finger table " << i << " : " << finger_table[i].id << std::endl;
+  }
+}
+
+Node get_info() { return self; } // Do not modify this line.
+
+Node get_predecessor() { return predecessor; }
+
+Node get_successor() { return successor; }
+
+Node closest_preceding_node(uint64_t id) {
+  for (int i = table_size - 1; i >= 0; i--) {
+    if (is_between(finger_table[i].id, self.id, id)) {
+      return finger_table[i];
+    }
+  }
+  return successor;
+}
 
 void create() {
   predecessor.ip = "";
@@ -53,7 +68,8 @@ Node find_successor(uint64_t id) {
   if (is_between(id, self.id, successor.id) || id == successor.id) {
     return successor;
   }
-  rpc::client client(successor.ip, successor.port);
+  Node n = closest_preceding_node(id);
+  rpc::client client(n.ip, n.port);
   return client.call("find_successor", id).as<Node>();
 }
 
@@ -88,22 +104,9 @@ void check_predecessor() {
 
 void fix_fingers() {
   next = (next + 1) % table_size;
-  uint64_t gap = mod2pow32((1 << (next*(32/table_size) - 1)));
+  uint64_t gap = mod2pow32((1 << ((next+1)*(32/table_size) - 1)));
   uint64_t id = mod2pow32(self.id + gap);
   finger_table[next] = find_successor(id);
-  if (self.port == 5059){
-     std::cout << "index: " << id << std::endl;
-     std::cout << "Finger table " << " : " << finger_table[next].id << std::endl;
-    // for (int i = 0; i < table_size; i++) {
-    //  std::cout << "Finger table " << i << " : " << finger_table[i].id << std::endl;
-    //  std::cout << "index: " << id << std::endl;
-    // }
-  }
-  // if (self.port == 5061){
-  //   std::cout << "me: " << self.id << std::endl;
-  //   std::cout << "gap: " << gap << std::endl;
-  //   std::cout << "ID: " << id << std::endl;
-  // }
 }
 
 void register_rpcs() {
@@ -114,6 +117,7 @@ void register_rpcs() {
   add_rpc("join", &join);
   add_rpc("find_successor", &find_successor);
   add_rpc("notify", &notify);
+  add_rpc("printFingerTable", &printFingerTable);
 }
 
 void register_periodics() {

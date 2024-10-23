@@ -8,14 +8,24 @@ import random
 def new_client(ip, port):
 	return msgpackrpc.Client(msgpackrpc.Address(ip, port))
 
+def find_successor(id, ring):
+    for i in range(len(ring) - 1):
+        if ring[i] < id <= ring[i + 1]:
+            return ring[i + 1]
+    return ring[0]
+
 if __name__ == "__main__":
 	n = int(sys.argv[1])
 	base = 5057
- 
+
 	clients = []
+	ids = []
 	for i in range(n):
 		clients.append(new_client("127.0.0.1", base + i))
-		print(clients[i].call("get_info"))
+		tmp = clients[i].call("get_info")
+		ids.append(tmp[2])
+		print(tmp)
+	ids.sort()
 
 	clients[0].call("create")
 	print("create")
@@ -23,22 +33,32 @@ if __name__ == "__main__":
 		clients[i].call("join", clients[i - 1].call("get_info"))
 		print(base + i, "joined")
 		time.sleep(2)
-	sys.exit()
-    
-	for i in range(n):
-		print(base + i)
-		print(clients[i].call("get_predecessor"))
-		print(clients[i].call("get_successor"))
+
+	# for i in range(n):
+	# 	print(base + i)
+	# 	print(clients[i].call("get_predecessor"))
+	# 	print(clients[i].call("get_successor"))
 
 
 	print("=====================================================")
 	time.sleep(20)
 	for i in range(5):
 		key = random.getrandbits(32)
-		print("key: ", key)
+		target = find_successor(key, ids)
 		for j in range(n):
-			print(base + j, clients[j].call("find_successor", key))
+			try:
+				assert clients[j].call("find_successor", key)[2] == target
+			except:
+				print("Key ", key)
+				print("Target ", target)
+				print("Client ", clients[j].call("get_info"))
+				print("Client answer ", clients[j].call("find_successor", key))
+				clients[j].call("printFingerTable")
+				exit()
+			# print(base + j, clients[j].call("find_successor", key))
 			time.sleep(2)
+	print("All lookup tests passed!")
+	print("=====================================================")
     
 # client_1 = new_client("127.0.0.1", 5057)
 # client_2 = new_client("127.0.0.1", 5058)
