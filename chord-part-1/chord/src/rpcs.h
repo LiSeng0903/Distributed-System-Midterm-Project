@@ -104,7 +104,8 @@ void check_predecessor() {
 
 void fix_fingers() {
   next = (next + 1) % table_size;
-  uint64_t gap = mod2pow32((1 << ((next+1)*(32/table_size) - 1)));
+  uint64_t gap = mod2pow32((1 << (32 - 4 + next)));
+  // uint64_t gap = mod2pow32((1 << ((next+1)*(32/table_size) - 1)));
   uint64_t id = mod2pow32(self.id + gap);
   finger_table[next] = find_successor(id);
 }

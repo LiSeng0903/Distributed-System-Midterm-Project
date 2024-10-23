@@ -42,6 +42,12 @@ if __name__ == "__main__":
 
 	print("=====================================================")
 	time.sleep(20)
+	print(ids)
+	print("5057 finger table")
+	clients[0].call("printFingerTable")
+	print("5062 finger table")
+	clients[5].call("printFingerTable")
+	# exit()
 	for i in range(5):
 		key = random.getrandbits(32)
 		target = find_successor(key, ids)
