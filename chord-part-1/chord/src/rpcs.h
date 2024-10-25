@@ -10,6 +10,8 @@ Node self, successor, predecessor;
 int table_size = 4;
 
 Node* finger_table = new Node[table_size];
+std::vector<Node> successor_list(table_size);
+// Node* successor_list = new Node[table_size];
 
 int next = 0;
 
@@ -23,9 +25,15 @@ bool is_between(uint64_t id, uint64_t a, uint64_t b) {
 
 uint64_t mod2pow32(uint64_t num) { return num & 0xFFFFFFFF; }
 
-void printFingerTable(){
+void print_finger_table(){
   for (int i = 0; i < table_size; i++) {
     std::cout << "Finger table " << i << " : " << finger_table[i].id << std::endl;
+  }
+}
+
+void print_successor_list(){
+  for (int i = 0; i < table_size; i++) {
+    std::cout << "Successor list " << i << " : " << successor_list[i].id << std::endl;
   }
 }
 
@@ -34,6 +42,18 @@ Node get_info() { return self; } // Do not modify this line.
 Node get_predecessor() { return predecessor; }
 
 Node get_successor() { return successor; }
+
+std::vector<Node> get_successor_list() { return successor_list; }
+
+void update_successor_list(Node new_successor, std::vector<Node> successor_successor_list) {
+  // try{
+  successor_successor_list.pop_back();
+  successor_successor_list.insert(successor_successor_list.begin(), new_successor);
+  successor_list = successor_successor_list;
+  // } catch (std::exception &e) {
+    // successor_list[0] = new_successor;
+  // }
+}
 
 Node closest_preceding_node(uint64_t id) {
   for (int i = table_size - 1; i >= 0; i--) {
@@ -92,10 +112,28 @@ void stabilize() {
   if (successor.ip == "") {
     return;
   }
-  rpc::client client(successor.ip, successor.port);
-  Node x = client.call("get_predecessor").as<Node>();
-  if (is_between(x.id, self.id, successor.id) && x.ip != "") {
-    successor = x;
+  try{
+    rpc::client client(successor.ip, successor.port);
+    Node x = client.call("get_predecessor").as<Node>();
+    if (is_between(x.id, self.id, successor.id) && x.ip != "") {
+      successor = x;
+    }
+    rpc::client client2(successor.ip, successor.port);
+    std::vector<Node> successor_successor_list = client2.call("get_successor_list").as<std::vector<Node>>();
+    update_successor_list(successor, successor_successor_list);
+  } catch (std::exception &e) {
+    std::cout << "ERROR" << std::endl;
+    for (int i = 1 ; i < table_size ; i++) {
+      try{
+        rpc::client client(successor_list[i].ip, successor_list[i].port);
+        std::vector<Node> successor_successor_list = client.call("get_successor_list").as<std::vector<Node>>();
+        update_successor_list(successor_list[i], successor_successor_list);
+        successor = successor_list[i];
+        break;
+      }catch (std::exception &e) {
+        continue;
+      }
+    }
   }
   // notify successor
   rpc::client client2(successor.ip, successor.port);
@@ -120,7 +158,6 @@ void check_predecessor() {
 void fix_fingers() {
   next = (next + 1) % table_size;
   uint64_t gap = mod2pow32((1 << (32 - 4 + next)));
-  // uint64_t gap = mod2pow32((1 << ((next+1)*(32/table_size) - 1)));
   uint64_t id = mod2pow32(self.id + gap);
   finger_table[next] = find_successor(id);
 }
@@ -129,12 +166,14 @@ void register_rpcs() {
   add_rpc("get_info", &get_info); // Do not modify this line.
   add_rpc("get_predecessor", &get_predecessor);
   add_rpc("get_successor", &get_successor);
+  add_rpc("get_successor_list", &get_successor_list);
   add_rpc("create", &create);
   add_rpc("join", &join);
   add_rpc("find_successor", &find_successor);
   add_rpc("notify", &notify);
-  add_rpc("printFingerTable", &printFingerTable);
+  add_rpc("print_finger_table", &print_finger_table);
   add_rpc("count_hop", &count_hop);
+  add_rpc("print_successor_list", &print_successor_list);
 }
 
 void register_periodics() {

@@ -39,9 +39,18 @@ if __name__ == "__main__":
 	# 	print(clients[i].call("get_predecessor"))
 	# 	print(clients[i].call("get_successor"))
 
+	print("Ring: ", ids)
 
 	print("=====================================================")
 	time.sleep(20)
+	clients[2].call("kill")
+	time.sleep(20)
+	for i in range(n):
+		if i == 2:
+			continue
+		print(base + i)
+		clients[i].call("print_successor_list")
+	exit()
 	total_hops = 0
 	for i in range(5):
 		key = random.getrandbits(32)
@@ -57,7 +66,7 @@ if __name__ == "__main__":
 				print("Target ", target)
 				print("Client ", clients[j].call("get_info"))
 				print("Client answer ", clients[j].call("find_successor", key))
-				clients[j].call("printFingerTable")
+				clients[j].call("print_finger_table")
 				exit()
 			time.sleep(2)
 	print("Average hops: ", total_hops / (5*n))
