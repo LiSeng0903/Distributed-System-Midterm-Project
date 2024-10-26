@@ -46,19 +46,20 @@ Node get_successor() { return successor; }
 std::vector<Node> get_successor_list() { return successor_list; }
 
 void update_successor_list(Node new_successor, std::vector<Node> successor_successor_list) {
-  // try{
   successor_successor_list.pop_back();
   successor_successor_list.insert(successor_successor_list.begin(), new_successor);
   successor_list = successor_successor_list;
-  // } catch (std::exception &e) {
-    // successor_list[0] = new_successor;
-  // }
 }
 
 Node closest_preceding_node(uint64_t id) {
   for (int i = table_size - 1; i >= 0; i--) {
     if (is_between(finger_table[i].id, self.id, id)) {
       return finger_table[i];
+    }
+  }
+  for (int i = table_size - 1; i >= 0; i--) {
+    if (is_between(successor_list[i].id, self.id, id)) {
+      return successor_list[i];
     }
   }
   return successor;
@@ -76,7 +77,31 @@ int count_hop(uint64_t id) {
   }
   Node n = closest_preceding_node(id);
   rpc::client client(n.ip, n.port);
-  return 1 + client.call("count_hop", id).as<int>();
+  try{
+    return 1 + client.call("count_hop", id).as<int>();
+  } catch (std::exception &e) {
+    for (int i = table_size - 1; i >= 0; i--) {
+      if (is_between(finger_table[i].id, self.id, id) && finger_table[i].id != n.id) {
+        try{
+          rpc::client client2(finger_table[i].ip, finger_table[i].port);
+          return 1 + client2.call("count_hop", id).as<int>();
+        } catch (std::exception &e) {
+          continue;
+        }
+      }
+    }
+    for (int i = table_size - 1; i >= 0; i--) {
+      if (is_between(successor_list[i].id, self.id, id) && finger_table[i].id != n.id) {
+        try{
+          rpc::client client2(successor_list[i].ip, successor_list[i].port);
+          return 1 + client2.call("count_hop", id).as<int>();
+        } catch (std::exception &e) {
+          continue;
+        }
+      }
+    }
+    return 1;
+  }
 }
 
 void create() {
@@ -105,7 +130,31 @@ Node find_successor(uint64_t id) {
   }
   Node n = closest_preceding_node(id);
   rpc::client client(n.ip, n.port);
-  return client.call("find_successor", id).as<Node>();
+  try{
+    return client.call("find_successor", id).as<Node>();
+  } catch (std::exception &e) {
+    for (int i = table_size - 1; i >= 0; i--) {
+      if (is_between(finger_table[i].id, self.id, id) && finger_table[i].id != n.id) {
+        try{
+          rpc::client client2(finger_table[i].ip, finger_table[i].port);
+          return client2.call("find_successor", id).as<Node>();
+        } catch (std::exception &e) {
+          continue;
+        }
+      }
+    }
+    for (int i = table_size - 1; i >= 0; i--) {
+      if (is_between(successor_list[i].id, self.id, id) && finger_table[i].id != n.id) {
+        try{
+          rpc::client client2(successor_list[i].ip, successor_list[i].port);
+          return client2.call("find_successor", id).as<Node>();
+        } catch (std::exception &e) {
+          continue;
+        }
+      }
+    }
+    return successor;
+  }
 }
 
 void stabilize() {
@@ -122,13 +171,12 @@ void stabilize() {
     std::vector<Node> successor_successor_list = client2.call("get_successor_list").as<std::vector<Node>>();
     update_successor_list(successor, successor_successor_list);
   } catch (std::exception &e) {
-    std::cout << "ERROR" << std::endl;
     for (int i = 1 ; i < table_size ; i++) {
       try{
         rpc::client client(successor_list[i].ip, successor_list[i].port);
         std::vector<Node> successor_successor_list = client.call("get_successor_list").as<std::vector<Node>>();
         update_successor_list(successor_list[i], successor_successor_list);
-        successor = successor_list[i];
+        successor = successor_list[0];
         break;
       }catch (std::exception &e) {
         continue;
@@ -172,8 +220,8 @@ void register_rpcs() {
   add_rpc("find_successor", &find_successor);
   add_rpc("notify", &notify);
   add_rpc("print_finger_table", &print_finger_table);
-  add_rpc("count_hop", &count_hop);
   add_rpc("print_successor_list", &print_successor_list);
+  add_rpc("count_hop", &count_hop);
 }
 
 void register_periodics() {

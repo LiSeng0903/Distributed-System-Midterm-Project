@@ -14,9 +14,27 @@ def find_successor(id, ring):
             return ring[i + 1]
     return ring[0]
 
+def kill_node(num):
+    info = clients[num].call("get_info")
+    clients[num].call("kill") 
+    ids.remove(info[2])
+    print(f"Node {info[1]} killed")
+    
+def print_all_info():
+    for i in range(n):
+        if i in kill_list:
+            continue
+        print("Node: ", base + i)
+        print("Predecessor", clients[i].call("get_predecessor"))
+        print("Successor", clients[i].call("get_successor"))
+        clients[i].call("print_finger_table")
+        clients[i].call("print_successor_list")
+
 if __name__ == "__main__":
 	n = int(sys.argv[1])
 	base = 5057
+	kill_list = [3, 7]
+	lookup_times = 10
 
 	clients = []
 	ids = []
@@ -29,36 +47,44 @@ if __name__ == "__main__":
 
 	clients[0].call("create")
 	print("create")
-	for i in range(1, n):
+	for i in range(1, n-5):
 		clients[i].call("join", clients[i - 1].call("get_info"))
 		print(base + i, "joined")
 		time.sleep(2)
-
-	# for i in range(n):
-	# 	print(base + i)
-	# 	print(clients[i].call("get_predecessor"))
-	# 	print(clients[i].call("get_successor"))
+	time.sleep(20)
 
 	print("Ring: ", ids)
 
 	print("=====================================================")
+	for i in kill_list:
+		kill_node(i)
+	time.sleep(40)
+	print("=====================================================")
+	for i in range(n-5, n):
+		clients[i].call("join", clients[i - 1].call("get_info"))
+		print(base + i, "joined")
+		time.sleep(2)
 	time.sleep(20)
-	clients[2].call("kill")
+	print("=====================================================")
+	kill_node(11)
 	time.sleep(20)
-	for i in range(n):
-		if i == 2:
-			continue
-		print(base + i)
-		clients[i].call("print_successor_list")
-	exit()
-	total_hops = 0
-	for i in range(5):
+	kill_node(14)
+	kill_node(15)
+	time.sleep(40)
+	
+  
+	print("Ring: ", ids)
+	# total_hops = 0
+	for i in range(lookup_times):
 		key = random.getrandbits(32)
 		target = find_successor(key, ids)
 		for j in range(n):
-			hop = clients[j].call("count_hop", key)
-			total_hops += hop
-			print(f"Node: {base+j}, Key: {key}, Target: {target}, Hop: {hop}")
+			if j in kill_list:
+				continue
+			# hop = clients[j].call("count_hop", key)
+			# total_hops += hop
+			# print(f"Node: {base+j}, Key: {key}, Target: {target}, Hop: {hop}")
+			print(f"Node: {base+j}, Key: {key}, Target: {target}")
 			try:
 				assert clients[j].call("find_successor", key)[2] == target
 			except:
@@ -69,7 +95,8 @@ if __name__ == "__main__":
 				clients[j].call("print_finger_table")
 				exit()
 			time.sleep(2)
-	print("Average hops: ", total_hops / (5*n))
+		# break
+	# print("Average hops: ", total_hops / (lookup_times*n))
 	print("All lookup tests passed!")
 	print("=====================================================")
     
