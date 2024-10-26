@@ -34,7 +34,7 @@ if __name__ == "__main__":
 	n = int(sys.argv[1])
 	base = 5057
 	kill_list = [3, 7]
-	lookup_times = 10
+	lookup_times = 30
 
 	clients = []
 	ids = []
@@ -71,7 +71,7 @@ if __name__ == "__main__":
 	kill_node(14)
 	kill_node(15)
 	time.sleep(40)
-	
+	kill_list = [3, 7, 11, 14, 15]	
   
 	print("Ring: ", ids)
 	# total_hops = 0
@@ -92,7 +92,7 @@ if __name__ == "__main__":
 				print("Target ", target)
 				print("Client ", clients[j].call("get_info"))
 				print("Client answer ", clients[j].call("find_successor", key))
-				clients[j].call("print_finger_table")
+				# clients[j].call("print_finger_table")
 				exit()
 			time.sleep(2)
 		# break
