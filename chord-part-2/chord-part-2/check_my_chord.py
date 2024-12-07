@@ -8,4 +8,4 @@ def new_client(ip, port):
 my_public_IPAddr = requests.get('https://api.ipify.org?format=json').json()['ip']
 
 my_chord_client = new_client(my_public_IPAddr, 5057)
-print(my_chord_client.call('get_info')) 
+print(my_chord_client.call('get_info'))

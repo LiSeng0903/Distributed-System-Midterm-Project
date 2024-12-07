@@ -44,18 +44,24 @@ for i in range(len(instances)):
     if instances[i]['PublicIP'] != None:
         instance_num += 1
 
+print('instance_num:', instance_num)
+print('instances:', instances)
 if instance_num == 1:
     print('I am the first instance')
     my_chord_client = new_client(my_public_IPAddr, CHORD_PORT)
     my_chord_client.call('create')
+    print('Ring created')
 else:
     print('I am not the first instance')
     for i in range(len(instances)):
         if instances[i]['PublicIP'] != my_public_IPAddr:
+            print('Found another instance', instances[i]['PublicIP'])
             my_chord_client = new_client(my_public_IPAddr, CHORD_PORT)
             print('create my chord client')
+            print('my client: ', my_chord_client.call('get_info'))
             chord_client_2 = new_client(instances[i]['PublicIP'], CHORD_PORT)
             print('create chord client 2')
+            print('chord client 2: ', chord_client_2.call('get_info'))
             my_chord_client.call('join', chord_client_2.call('get_info'))
-            print('join chord client 2')
+            print('join from chord client 2')
             break
